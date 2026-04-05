@@ -5,7 +5,6 @@ An intelligent code review assistant powered by Google Gemini AI that provides d
 ![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-14+-black.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
 ## Features
 

@@ -5,12 +5,12 @@ An intelligent code review assistant powered by Google Gemini AI that provides d
 ![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-14+-black.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
 ## Features
 
 | Feature | Description |
 |---------|-------------|
+<<<<<<< HEAD
 | **Monaco Code Editor** | Syntax-highlighted editor with drag-and-drop file upload support |
 | **AI-Powered Reviews** | Google Gemini analysis for bugs, security vulnerabilities, performance issues, and code smells |
 | **Structured JSON Output** | Tabbed review interface categorized by severity and type (Bugs, Security, Performance, etc.) |
@@ -27,6 +27,25 @@ An intelligent code review assistant powered by Google Gemini AI that provides d
 3. **AI Processing**: Backend streams the response using Server-Sent Events (SSE) from Google Gemini.
 4. **Display Results**: Frontend renders the real-time stream, then parses it into categorized tabs (Bugs, Security, Performance, Practices, Positives).
 5. **Apply Fixes**: Users can click "Apply Fix" to automatically merge AI-suggested code replacements directly into the editor.
+=======
+| **Monaco Code Editor** | Syntax-highlighted editor supporting multiple languages (Python, JS/TS, Java, etc.) |
+| **AI-Powered Reviews** | Google Gemini analysis for bugs, security vulnerabilities, performance issues, and code smells |
+| **Best Practices** | Industry-standard recommendations with explanations and fixes |
+| **Structured Output** | Markdown-formatted reviews categorized by severity and type |
+| **Real-time Status** | Live progress indicators during analysis |
+| **Responsive UI** | Next.js 14+ with Tailwind CSS and shadcn/ui components |
+| **API-Driven** | FastAPI backend with health checks and CORS support |
+| **CLI Support** | Additional `scripts/run_review.py` for terminal usage |
+| **Fast Responses** | Gemini 2.0 Flash model (~2-5s average) |
+
+## Functionality
+
+1. **Code Input**: Paste or type code in the Monaco editor.
+2. **Submit Review**: Frontend sends code + language to FastAPI `/review/` endpoint.
+3. **AI Processing**: Backend calls Google Gemini API with optimized prompt for structured feedback.
+4. **Display Results**: Frontend renders review in categorized sections (Bugs, Security, Performance, Refactoring).
+5. **Copy/Export**: Easy copy-to-clipboard for reviewed code suggestions.
+>>>>>>> 0f7f906314685faf0888799d6f21d52d0b7d3c5e
 
 ## Screenshots
 
@@ -91,10 +110,17 @@ flowchart TB
 
 **Data Flow Details**:
 1. **Web Flow**:
+<<<<<<< HEAD
    - User inputs code via drag-and-drop or typing in the Web UI.
    - Frontend triggers a `POST` request to the backend `/review/stream` endpoint.
    - Backend constructs an optimized structured JSON prompt and streams the Google Gemini API response via SSE.
    - Frontend parses the JSON stream and renders a tabbed interface with inline code annotations and apply-fix diffs.
+=======
+   - User inputs code + selects language in the Web UI.
+   - Frontend triggers a `POST` request to the backend `/review/` endpoint.
+   - Backend constructs an optimized code review prompt and queries the Google Gemini API.
+   - Response is parsed and rendered locally in the browser utilizing markdown elements.
+>>>>>>> 0f7f906314685faf0888799d6f21d52d0b7d3c5e
 2. **Automated CI Flow**:
    - Developer opens a Pull Request on GitHub.
    - GitHub Actions workflow injects event context into `run_review.py`.
@@ -104,10 +130,17 @@ flowchart TB
 **Tech Stack**:
 | Layer | Technologies |
 |-------|--------------|
+<<<<<<< HEAD
 | Frontend | Next.js 14+, React 19, Tailwind CSS 4, Monaco Editor, react-dropzone, shadcn/ui |
 | Backend | FastAPI, Python 3.11+, uvicorn, httpx, sse-starlette, Pydantic |
 | AI | Google Gemini 2.5 Flash |
 | Utils | dotenv (.env), CORS middleware, logging |
+=======
+| Frontend | Next.js 14+, React 19, Tailwind CSS 4, shadcn/ui, lucide-react |
+| Backend | FastAPI, Python 3.11+, uvicorn, Pydantic |
+| AI | Google Gemini 2.5 Flash |
+| Utils | dotenv (.env), CORS middleware, logging
+>>>>>>> 0f7f906314685faf0888799d6f21d52d0b7d3c5e
 
 ## Quick Start
 
@@ -137,7 +170,11 @@ Open http://localhost:3000. Ensure backend runs on :8000 first (update API_URL i
 ## Project Structure
 
 ```
+<<<<<<< HEAD
 AI Code Reviewer/                 # Root: d:/College/RCCIIT/Projects/AI Code Reviewer
+=======
+AI Code Reviewer/                 # Root
+>>>>>>> 0f7f906314685faf0888799d6f21d52d0b7d3c5e
 ├── app/                          # FastAPI Backend
 │   └── main.py                   # Main API server (/review/, /health)
 ├── ai-code-review-ui/            # Next.js 14 Frontend

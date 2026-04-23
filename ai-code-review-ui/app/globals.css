@@ -123,3 +123,40 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Monaco Editor — AI Review Glyph Margin Icons */
+.glyph-error {
+  background: #ef4444;
+  border-radius: 50%;
+  width: 10px !important;
+  height: 10px !important;
+  margin-top: 5px;
+  margin-left: 5px;
+}
+.glyph-warning {
+  background: #f59e0b;
+  border-radius: 50%;
+  width: 10px !important;
+  height: 10px !important;
+  margin-top: 5px;
+  margin-left: 5px;
+}
+.glyph-info {
+  background: #3b82f6;
+  border-radius: 50%;
+  width: 10px !important;
+  height: 10px !important;
+  margin-top: 5px;
+  margin-left: 5px;
+}
+
+/* Monaco Editor — AI Review Line Highlights */
+.line-highlight-error {
+  background: rgba(239, 68, 68, 0.10) !important;
+}
+.line-highlight-warning {
+  background: rgba(245, 158, 11, 0.10) !important;
+}
+.line-highlight-info {
+  background: rgba(59, 130, 246, 0.08) !important;
+}

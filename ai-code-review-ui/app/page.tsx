@@ -1,46 +1,165 @@
 // frontend/app/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import CodeEditor from "@/components/CodeEditor";
 import ReviewDisplay from "@/components/ReviewDisplay";
 import StatusIndicator from "@/components/StatusIndicator";
 import { Button } from "@/components/ui/button";
 import { BotMessageSquare, Sparkles } from "lucide-react";
+import type { StructuredReview, ReviewSuggestion } from "@/components/ReviewDisplay";
 
 export default function Home() {
-  const [code, setCode] = useState<string>("def calculate_average(numbers):\n    total = 0\n    for num in numbers:\n        total += num\n    return total / len(numbers)");
-  const [language, setLanguage] = useState<string>("python");
-  const [reviewOutput, setReviewOutput] = useState<string>("");
+  const [code, setCode] = useState<string>(
+    "def calculate_average(numbers):\n    total = 0\n    for num in numbers:\n        total += num\n    return total / len(numbers)"
+  );
+  const [review, setReview] = useState<StructuredReview | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [streamingText, setStreamingText] = useState<string>("");
 
-  const handleAnalyze = async () => {
+  // Derive suggestions from structured review for the editor annotations
+  const suggestions = review?.suggestions ?? [];
+
+  const handleAnalyze = useCallback(async () => {
     if (!code.trim()) return;
     setStatus("loading");
-    setReviewOutput("");
+    setReview(null);
+    setErrorMessage("");
+    setStreamingText("");
 
     try {
-      const response = await fetch("http://localhost:8000/review/", {
+      // Attempt SSE streaming endpoint first
+      const response = await fetch("http://localhost:8000/review/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, language }),
+        body: JSON.stringify({ code }),
       });
 
-      if (!response.ok) throw new Error("API Request Failed");
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}`);
+      }
 
-      const data = await response.ok ? await response.json() : null;
-      if (data && data.success) {
-        setReviewOutput(data.review);
-        setStatus("success");
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response stream available");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let fullReview = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Parse SSE events from buffer
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || ""; // Keep incomplete line in buffer
+
+        let eventType = "";
+        for (const line of lines) {
+          if (line.startsWith("event: ")) {
+            eventType = line.slice(7).trim();
+          } else if (line.startsWith("data: ")) {
+            const dataStr = line.slice(6);
+            try {
+              const data = JSON.parse(dataStr);
+
+              if (eventType === "chunk") {
+                fullReview += data.text || "";
+                setStreamingText(fullReview);
+              } else if (eventType === "done") {
+                fullReview = data.full_review || fullReview;
+              } else if (eventType === "error") {
+                throw new Error(data.detail || "Stream error");
+              }
+            } catch (parseErr) {
+              // Ignore JSON parse errors on partial data
+              if (eventType === "error") throw parseErr;
+            }
+            eventType = "";
+          }
+        }
+      }
+
+      // Parse the complete JSON review
+      if (fullReview) {
+        try {
+          const parsed: StructuredReview = JSON.parse(fullReview);
+          setReview(parsed);
+          setStatus("success");
+        } catch {
+          // If JSON parsing fails, try to extract JSON from the response
+          const jsonMatch = fullReview.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed: StructuredReview = JSON.parse(jsonMatch[0]);
+            setReview(parsed);
+            setStatus("success");
+          } else {
+            throw new Error("Failed to parse AI response as JSON");
+          }
+        }
       } else {
-        throw new Error(data?.detail || "Unknown Error");
+        throw new Error("No review content received");
       }
     } catch (error) {
-      console.error(error);
+      console.error("Review error:", error);
+
+      // Fallback: try non-streaming endpoint
+      try {
+        const fallbackRes = await fetch("http://localhost:8000/review/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code }),
+        });
+
+        if (!fallbackRes.ok) throw new Error("Fallback also failed");
+
+        const fallbackData = await fallbackRes.json();
+        if (fallbackData.success && fallbackData.review) {
+          const parsed: StructuredReview = JSON.parse(fallbackData.review);
+          setReview(parsed);
+          setStatus("success");
+          return;
+        }
+      } catch {
+        // Both endpoints failed
+      }
+
       setStatus("error");
-      setReviewOutput(`### ⚠️ Review Error\n\nFailed to get a response from the AI backend. Please ensure the server is running on port 8000.\n\n\`\`\`text\n${error}\n\`\`\``);
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to get a response. Please ensure the server is running on port 8000."
+      );
     }
-  };
+  }, [code]);
+
+  // Apply Fix: replace original code lines with the suggestion replacement
+  const handleApplyFix = useCallback(
+    (suggestion: ReviewSuggestion) => {
+      if (!suggestion.original || !suggestion.replacement) return;
+
+      const lines = code.split("\n");
+      const lineIndex = suggestion.line - 1;
+
+      if (lineIndex >= 0 && lineIndex < lines.length) {
+        // Try exact line match first
+        if (lines[lineIndex].trim() === suggestion.original.trim()) {
+          lines[lineIndex] = suggestion.replacement;
+          setCode(lines.join("\n"));
+        } else {
+          // Fallback: find and replace the original text anywhere
+          const newCode = code.replace(suggestion.original, suggestion.replacement);
+          if (newCode !== code) {
+            setCode(newCode);
+          }
+        }
+      }
+    },
+    [code, setCode]
+  );
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col font-sans">
@@ -74,24 +193,27 @@ export default function Home() {
         <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-100 dark:border-zinc-800 shadow-sm flex flex-col gap-4">
           <CodeEditor 
             code={code} 
-            setCode={setCode} 
-            language={language} 
-            setLanguage={setLanguage} 
+            setCode={setCode}
+            suggestions={suggestions}
+            onApplyFix={handleApplyFix}
           />
         </div>
 
         {/* Right Pane - Review */}
         <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-100 dark:border-zinc-800 shadow-sm flex flex-col">
           <ReviewDisplay 
-            review={reviewOutput} 
-            status={status} 
+            review={review}
+            status={status}
+            errorMessage={errorMessage}
+            streamingText={streamingText}
+            onApplyFix={handleApplyFix}
           />
         </div>
 
       </main>
 
       <footer className="py-6 border-t border-zinc-100 dark:border-zinc-800 mt-12 text-center text-zinc-500 text-sm">
-        Powered by Google Gemini 1.5 Flash • Built with Next.js & FastAPI
+        Powered by Google Gemini 2.5 Flash • Built with Next.js &amp; FastAPI
       </footer>
     </div>
   );

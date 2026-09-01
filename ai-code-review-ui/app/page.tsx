@@ -1,13 +1,15 @@
 // frontend/app/page.tsx
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import CodeEditor from "@/components/CodeEditor";
 import ReviewDisplay from "@/components/ReviewDisplay";
 import StatusIndicator from "@/components/StatusIndicator";
+import InitialLoader from "@/components/InitialLoader";
 import { Button } from "@/components/ui/button";
 import { BotMessageSquare, Sparkles } from "lucide-react";
-import type { StructuredReview, ReviewSuggestion } from "@/components/ReviewDisplay";
+import { motion } from "framer-motion";
+import type { StructuredReview, ReviewSuggestion, ReviewIssue } from "@/components/ReviewDisplay";
 
 export default function Home() {
   const [code, setCode] = useState<string>(
@@ -17,6 +19,17 @@ export default function Home() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [streamingText, setStreamingText] = useState<string>("");
+  const [isApplyingFix, setIsApplyingFix] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  useEffect(() => {
+    const hasSeen = sessionStorage.getItem("hasSeenLoading");
+    if (hasSeen) {
+      setIsInitialLoading(false);
+    } else {
+      sessionStorage.setItem("hasSeenLoading", "true");
+    }
+  }, []);
 
   // Derive suggestions from structured review for the editor annotations
   const suggestions = review?.suggestions ?? [];
@@ -28,9 +41,11 @@ export default function Home() {
     setErrorMessage("");
     setStreamingText("");
 
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+
     try {
       // Attempt SSE streaming endpoint first
-      const response = await fetch("http://localhost:8000/review/stream", {
+      const response = await fetch(`${API_BASE_URL}/review/stream`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code }),
@@ -108,7 +123,7 @@ export default function Home() {
 
       // Fallback: try non-streaming endpoint
       try {
-        const fallbackRes = await fetch("http://localhost:8000/review/", {
+        const fallbackRes = await fetch(`${API_BASE_URL}/review/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ code }),
@@ -136,52 +151,108 @@ export default function Home() {
     }
   }, [code]);
 
-  // Apply Fix: replace original code lines with the suggestion replacement
+  // Apply Fix: dynamically fetch the corrected code from Gemini API
   const handleApplyFix = useCallback(
-    (suggestion: ReviewSuggestion) => {
-      if (!suggestion.original || !suggestion.replacement) return;
+    async (suggestion: ReviewSuggestion) => {
+      setIsApplyingFix(true);
+      try {
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+        const res = await fetch(`${API_BASE_URL}/fix/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code,
+            issue_message: suggestion.message,
+            line: suggestion.line,
+            original_snippet: suggestion.original || "",
+          }),
+        });
 
-      const lines = code.split("\n");
-      const lineIndex = suggestion.line - 1;
+        if (!res.ok) {
+          throw new Error(`Failed to fetch fix: ${res.status}`);
+        }
 
-      if (lineIndex >= 0 && lineIndex < lines.length) {
-        // Try exact line match first
-        if (lines[lineIndex].trim() === suggestion.original.trim()) {
-          lines[lineIndex] = suggestion.replacement;
-          setCode(lines.join("\n"));
-        } else {
-          // Fallback: find and replace the original text anywhere
+        const data = await res.json();
+        if (data.fixed_code) {
+          setCode(data.fixed_code);
+        }
+      } catch (error) {
+        console.error("Apply fix error:", error);
+        // Fallback to old simple replacement if API fails
+        if (suggestion.original && suggestion.replacement) {
           const newCode = code.replace(suggestion.original, suggestion.replacement);
           if (newCode !== code) {
             setCode(newCode);
           }
         }
+      } finally {
+        setIsApplyingFix(false);
       }
     },
     [code, setCode]
   );
 
+  const handleRemoveSuggestion = useCallback((suggestionToRemove: ReviewSuggestion) => {
+    setReview((prev) => {
+      if (!prev) return prev;
+
+      const { line, severity } = suggestionToRemove;
+      
+      // Helper to remove any issues that match the fixed suggestion's line and severity
+      const filterCategory = (issues: ReviewIssue[]) =>
+        issues.filter((issue) => !(issue.line === line && issue.severity === severity));
+
+      return {
+        ...prev,
+        categories: {
+          ...prev.categories,
+          bugs: filterCategory(prev.categories.bugs),
+          security: filterCategory(prev.categories.security),
+          performance: filterCategory(prev.categories.performance),
+          best_practices: filterCategory(prev.categories.best_practices),
+        },
+        suggestions: prev.suggestions.filter((s) => s !== suggestionToRemove)
+      };
+    });
+  }, []);
+
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col font-sans">
+    <>
+      <InitialLoader 
+        isLoading={isInitialLoading} 
+        onLoadingComplete={() => setIsInitialLoading(false)} 
+      />
+      <div className="min-h-screen bg-transparent text-[var(--frozen-water)] flex flex-col font-sans">
       {/* Slim Header */}
-      <header className="sticky top-0 z-50 bg-white/95 dark:bg-zinc-900/95 border-b border-zinc-200 dark:border-zinc-800 backdrop-blur-sm">
+      <header className="sticky top-0 z-50 glass-panel !rounded-none !border-x-0 !border-t-0">
         <nav className="max-w-[95rem] mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-zinc-900 dark:bg-white rounded-xl">
-               <BotMessageSquare className="w-6 h-6 text-white dark:text-zinc-900" />
+            <div className="p-2 bg-[var(--soft-apricot)] rounded-xl">
+               <BotMessageSquare className="w-6 h-6 text-[var(--dark-amethyst)]" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tighter">AI Code <span className="font-light text-zinc-500">Reviewer</span></h1>
+            <h1 
+              className="text-2xl font-bold tracking-wide" 
+              style={{ fontFamily: 'var(--font-fraunces), serif' }}
+            >
+              AI Code <span className="font-light italic text-[var(--soft-apricot)]">Reviewer</span>
+            </h1>
           </div>
           <div className="flex items-center gap-4">
             <StatusIndicator status={status} />
-            <Button 
-                onClick={handleAnalyze} 
-                disabled={status === "loading"}
-                className="gap-2 bg-zinc-900 hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 text-base px-6 py-5 rounded-xl shadow-lg shadow-zinc-950/10"
+            <motion.div
+              whileHover={status === "loading" ? {} : { scale: 1.02 }}
+              whileTap={status === "loading" ? {} : { scale: 0.96 }}
+              className="transform-gpu"
             >
-              {status === "loading" ? "Analyzing..." : "Analyze Code"}
-              <Sparkles className="w-5 h-5" />
-            </Button>
+              <Button 
+                  onClick={handleAnalyze} 
+                  disabled={status === "loading"}
+                  className="gap-2 glass-button-primary hover:bg-[#c9457b] text-white border-none text-base px-6 py-5 rounded-xl transition-all font-semibold"
+              >
+                {status === "loading" ? "Analyzing..." : "Analyze Code"}
+                <Sparkles className="w-5 h-5" />
+              </Button>
+            </motion.div>
           </div>
         </nav>
       </header>
@@ -190,23 +261,27 @@ export default function Home() {
       <main className="flex-grow max-w-[95rem] mx-auto w-full p-6 lg:p-10 grid grid-cols-1 lg:grid-cols-[1.2fr,1fr] gap-8">
         
         {/* Left Pane - Editor */}
-        <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-100 dark:border-zinc-800 shadow-sm flex flex-col gap-4">
+        <div className="glass-panel !rounded-3xl p-6 flex flex-col gap-4">
           <CodeEditor 
             code={code} 
             setCode={setCode}
             suggestions={suggestions}
             onApplyFix={handleApplyFix}
+            status={status}
+            isApplyingFix={isApplyingFix}
           />
         </div>
 
         {/* Right Pane - Review */}
-        <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-100 dark:border-zinc-800 shadow-sm flex flex-col">
+        <div className="glass-panel !rounded-3xl p-6 flex flex-col relative overflow-hidden">
           <ReviewDisplay 
             review={review}
             status={status}
             errorMessage={errorMessage}
             streamingText={streamingText}
             onApplyFix={handleApplyFix}
+            onRemoveSuggestion={handleRemoveSuggestion}
+            isApplyingFix={isApplyingFix}
           />
         </div>
 
@@ -216,5 +291,6 @@ export default function Home() {
         Powered by Google Gemini 2.5 Flash • Built with Next.js &amp; FastAPI
       </footer>
     </div>
+    </>
   );
 }

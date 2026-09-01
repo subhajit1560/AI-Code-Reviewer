@@ -3,5 +3,4 @@ uvicorn
 requests
 httpx
 sse-starlette
-openai
 python-dotenv

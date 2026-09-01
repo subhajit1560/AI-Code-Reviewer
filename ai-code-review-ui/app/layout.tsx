@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import BackgroundVideo from "@/components/BackgroundVideo";
+import SmoothScrollProvider from "@/components/SmoothScrollProvider";
+import PageTransition from "@/components/PageTransition";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -24,11 +28,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-<body
+      <body
         suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${fraunces.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <SmoothScrollProvider>
+          <BackgroundVideo />
+          <PageTransition>
+            {children}
+          </PageTransition>
+        </SmoothScrollProvider>
       </body>
     </html>
   );

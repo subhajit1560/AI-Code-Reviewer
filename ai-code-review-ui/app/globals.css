@@ -47,6 +47,20 @@
 }
 
 :root {
+  /* Brand Palette */
+  --frozen-water: #CCF7E6;
+  --soft-apricot: #F6D6B1;
+  --blush-rose: #DE5791;
+  --olive-leaf: #426B18;
+  --dark-amethyst: #110330;
+
+  /* Semantic Aliases (Light) */
+  --bg-primary: var(--frozen-water);
+  --bg-surface: var(--soft-apricot);
+  --text-primary: var(--dark-amethyst);
+  --accent-primary: var(--olive-leaf);
+  --accent-secondary: var(--blush-rose);
+
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -82,6 +96,13 @@
 }
 
 .dark {
+  /* Semantic Aliases (Dark) */
+  --bg-primary: var(--dark-amethyst);
+  --bg-surface: color-mix(in srgb, var(--dark-amethyst) 85%, white);
+  --text-primary: var(--frozen-water);
+  --accent-primary: var(--soft-apricot);
+  --accent-secondary: var(--blush-rose);
+
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -159,4 +180,65 @@
 }
 .line-highlight-info {
   background: rgba(59, 130, 246, 0.08) !important;
+}
+
+@keyframes check-pop-in {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes label-fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.animate-check-pop {
+  animation: check-pop-in 0.25s ease-out forwards;
+}
+
+.animate-label-fade {
+  animation: label-fade-in 0.3s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-check-pop,
+  .animate-label-fade {
+    animation: none;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    background-color: rgba(17, 3, 48, 0.40); /* --dark-amethyst */
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  }
+
+  .glass-card {
+    background-color: rgba(17, 3, 48, 0.45); /* slightly more opaque to compensate for less blur */
+    backdrop-filter: blur(4px) saturate(120%);
+    -webkit-backdrop-filter: blur(4px) saturate(120%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  .glass-button-primary {
+    background-color: rgba(222, 87, 145, 0.65); /* --blush-rose */
+    backdrop-filter: blur(8px) saturate(140%);
+    -webkit-backdrop-filter: blur(8px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(222, 87, 145, 0.3);
+  }
+  
+  .glass-button-success {
+    background-color: rgba(66, 107, 24, 0.65); /* --olive-leaf */
+    backdrop-filter: blur(8px) saturate(140%);
+    -webkit-backdrop-filter: blur(8px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(66, 107, 24, 0.3);
+  }
 }

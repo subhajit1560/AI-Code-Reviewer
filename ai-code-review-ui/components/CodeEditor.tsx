@@ -6,6 +6,7 @@ import Editor, { OnMount } from "@monaco-editor/react";
 import { useDropzone } from "react-dropzone";
 import { Terminal, Upload, FileCode2 } from "lucide-react";
 import type { editor } from "monaco-editor";
+import LoadingOverlay from "./LoadingOverlay";
 
 // Types for structured review suggestions (used for inline annotations)
 export interface ReviewSuggestion {
@@ -21,6 +22,8 @@ interface CodeEditorProps {
   setCode: Dispatch<SetStateAction<string>>;
   suggestions?: ReviewSuggestion[];
   onApplyFix?: (suggestion: ReviewSuggestion) => void;
+  status?: "idle" | "loading" | "success" | "error";
+  isApplyingFix?: boolean;
 }
 
 // Map file extension to Monaco language ID
@@ -51,7 +54,7 @@ const EXT_TO_LANG: Record<string, string> = {
   xml: "xml",
 };
 
-export default function CodeEditor({ code, setCode, suggestions = [], onApplyFix }: CodeEditorProps) {
+export default function CodeEditor({ code, setCode, suggestions = [], onApplyFix, status = "idle", isApplyingFix = false }: CodeEditorProps) {
   const [detectedLang, setDetectedLang] = useState("python");
   const [droppedFileName, setDroppedFileName] = useState<string | null>(null);
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
@@ -170,14 +173,14 @@ export default function CodeEditor({ code, setCode, suggestions = [], onApplyFix
       <input {...getInputProps()} />
 
       {/* Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800 mb-2">
-        <div className="flex items-center gap-3">
-          <Terminal className="w-5 h-5 text-zinc-400" />
+      <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-2">
+        <div className="flex items-center gap-3 text-[var(--frozen-water)]">
+          <Terminal className="w-5 h-5 opacity-80" />
           <h2 className="text-xl font-semibold tracking-tight">Input Source Code</h2>
         </div>
         {droppedFileName && (
-          <div className="flex items-center gap-2 text-sm text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-lg">
-            <FileCode2 className="w-4 h-4" />
+          <div className="flex items-center gap-2 text-sm text-[var(--frozen-water)] bg-white/10 px-3 py-1 rounded-lg font-medium border border-white/20">
+            <FileCode2 className="w-4 h-4 opacity-80" />
             {droppedFileName}
           </div>
         )}
@@ -185,19 +188,19 @@ export default function CodeEditor({ code, setCode, suggestions = [], onApplyFix
 
       {/* Drag-and-Drop Overlay */}
       {isDragActive && (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/90 dark:bg-zinc-900/90 border-2 border-dashed border-sky-500 rounded-2xl backdrop-blur-sm transition-all">
-          <Upload className="w-12 h-12 text-sky-500 mb-3 animate-bounce" />
-          <p className="text-lg font-semibold text-sky-600 dark:text-sky-400">
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center glass-panel border-2 border-dashed border-white/40 backdrop-blur-md transition-all">
+          <Upload className="w-12 h-12 text-[var(--frozen-water)] mb-3 animate-bounce" />
+          <p className="text-lg font-semibold text-[var(--frozen-water)]">
             Drop your file here
           </p>
-          <p className="text-sm text-zinc-500 mt-1">
+          <p className="text-sm text-[var(--frozen-water)]/70 mt-1">
             Supports .py, .js, .ts, .java, .cpp and more
           </p>
         </div>
       )}
 
       {/* Monaco Editor */}
-      <div className="flex-grow rounded-xl overflow-hidden border border-zinc-100 dark:border-zinc-800 shadow-inner min-h-[400px] lg:min-h-[600px]">
+      <div className="flex-grow rounded-xl overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.5)] min-h-[400px] lg:min-h-[600px] border border-black bg-[#1e1e1e]">
         <Editor
           height="100%"
           language={detectedLang}
@@ -205,6 +208,7 @@ export default function CodeEditor({ code, setCode, suggestions = [], onApplyFix
           onChange={(value) => setCode(value || "")}
           theme="vs-dark"
           options={{
+            readOnly: status === "loading" || isApplyingFix,
             minimap: { enabled: false },
             fontSize: 14,
             lineNumbers: "on",
@@ -224,11 +228,18 @@ export default function CodeEditor({ code, setCode, suggestions = [], onApplyFix
           }}
           onMount={handleEditorMount}
           loading={
-            <div className="flex items-center justify-center h-full text-zinc-500 gap-3">
-              <div className="w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
+            <div className="flex items-center justify-center h-full text-[var(--frozen-water)] gap-3 font-medium bg-[#1e1e1e]">
+              <div className="w-5 h-5 border-2 border-white/30 border-t-[var(--blush-rose)] rounded-full animate-spin" />
               Loading Editor...
             </div>
           }
+        />
+
+        {/* Loading Overlay */}
+        <LoadingOverlay 
+          variant="panel" 
+          message={isApplyingFix ? "Applying fix..." : "Analyzing your code..."} 
+          isVisible={status === "loading" || isApplyingFix} 
         />
       </div>
     </div>

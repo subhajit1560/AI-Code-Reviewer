@@ -1,423 +1,254 @@
 # AI Code Reviewer
 
-An intelligent code review assistant powered by Google Gemini AI that provides detailed feedback on your code like a senior software engineer. Features a modern Next.js UI with Monaco code editor, real-time status indicators, and structured review output.
+An intelligent, full-stack code review assistant powered by **Google Gemini 3.6 Flash**. It provides actionable, senior-engineer-level feedback with categorized insights on bugs, security vulnerabilities, performance optimizations, and best practices. Features a modern Next.js 14 web application with a Monaco Editor, live SSE streaming, 1-click automated fix generator, and GitHub Actions PR review integration.
 
-![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)
-![Next.js](https://img.shields.io/badge/Next.js-14+-black.svg)
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB.svg?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-009688.svg?logo=fastapi&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-14+-black.svg?logo=next.js&logoColor=white)
+![Google Gemini](https://img.shields.io/badge/Google%20Gemini-3.6%20Flash-4285F4.svg?logo=google&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4-38B2AC.svg?logo=tailwind-css&logoColor=white)
 
-## Features
+---
 
-| Feature | Description |
-|---------|-------------|
-<<<<<<< HEAD
-| **Monaco Code Editor** | Syntax-highlighted editor with drag-and-drop file upload support |
-| **AI-Powered Reviews** | Google Gemini analysis for bugs, security vulnerabilities, performance issues, and code smells |
-| **Structured JSON Output** | Tabbed review interface categorized by severity and type (Bugs, Security, Performance, etc.) |
-| **Real-time Streaming** | Live Server-Sent Events (SSE) streaming of AI responses |
-| **Apply Fix Capability** | One-click application of AI-suggested code fixes with inline diff viewer |
-| **Responsive UI** | Next.js 14+ with Tailwind CSS and shadcn/ui components |
-| **API-Driven** | FastAPI backend with SSE streaming and JSON schema enforcement |
-| **CLI Support** | Additional `scripts/run_review.py` for terminal usage |
+## ✨ Features
 
-## Functionality
+- 💻 **Monaco Code Editor**: Syntax-highlighted code editor supporting multiple programming languages with line numbers and intuitive editing.
+- ⚡ **Real-time SSE Streaming**: Live Server-Sent Events (SSE) stream AI reviews token-by-token directly to the UI.
+- 🧠 **Structured AI Reviews**: Mentorship-focused JSON feedback categorized into:
+  - 🐛 **Bugs & Logic Errors**
+  - 🛡️ **Security Vulnerabilities**
+  - ⚡ **Performance & Complexity**
+  - 📖 **Best Practices & Code Quality**
+  - 🌟 **Positive Highlights**
+- 🛠️ **1-Click Apply Fix**: Generate and merge AI-suggested code fixes into the editor in real-time with automated diff handling.
+- 🔄 **Smart Fallback & Retry Handling**: Built-in exponential backoff retry mechanism for rate limits (429) and transparent fallback to synchronous review endpoints.
+- 🤖 **GitHub Actions CI Bot**: Automatically review Pull Requests and post structured review comments on GitHub (`scripts/run_review.py`).
+- 🎨 **Modern Glassmorphic UI**: Ambient animated video background, smooth page transitions, 3D loader, and responsive dark aesthetics.
 
-1. **Code Input**: Drag and drop a file or paste code into the Monaco editor.
-2. **Submit Review**: Frontend sends code to FastAPI `/review/stream` endpoint.
-3. **AI Processing**: Backend streams the response using Server-Sent Events (SSE) from Google Gemini.
-4. **Display Results**: Frontend renders the real-time stream, then parses it into categorized tabs (Bugs, Security, Performance, Practices, Positives).
-5. **Apply Fixes**: Users can click "Apply Fix" to automatically merge AI-suggested code replacements directly into the editor.
-=======
-| **Monaco Code Editor** | Syntax-highlighted editor supporting multiple languages (Python, JS/TS, Java, etc.) |
-| **AI-Powered Reviews** | Google Gemini analysis for bugs, security vulnerabilities, performance issues, and code smells |
-| **Best Practices** | Industry-standard recommendations with explanations and fixes |
-| **Structured Output** | Markdown-formatted reviews categorized by severity and type |
-| **Real-time Status** | Live progress indicators during analysis |
-| **Responsive UI** | Next.js 14+ with Tailwind CSS and shadcn/ui components |
-| **API-Driven** | FastAPI backend with health checks and CORS support |
-| **CLI Support** | Additional `scripts/run_review.py` for terminal usage |
-| **Fast Responses** | Gemini 2.0 Flash model (~2-5s average) |
+---
 
-## Functionality
-
-1. **Code Input**: Paste or type code in the Monaco editor.
-2. **Submit Review**: Frontend sends code + language to FastAPI `/review/` endpoint.
-3. **AI Processing**: Backend calls Google Gemini API with optimized prompt for structured feedback.
-4. **Display Results**: Frontend renders review in categorized sections (Bugs, Security, Performance, Refactoring).
-5. **Copy/Export**: Easy copy-to-clipboard for reviewed code suggestions.
->>>>>>> 0f7f906314685faf0888799d6f21d52d0b7d3c5e
-
-## Screenshots
-
-### Main Interface
-The clean, intuitive interface makes code review simple and efficient.
-
-### Review Output
-Detailed, structured feedback covering bugs, security, performance, and best practices.
-
-## System Architecture
+## 🏗️ System Architecture
 
 ```mermaid
 flowchart TB
     %% Actors
-    User_Web([Web User])
-    User_Git([GitHub Collaborator])
+    User_Web([Web Developer])
+    User_Git([GitHub PR Author])
 
     %% Web App Flow
-    subgraph "Web Application Interface"
-        UI["Next.js Frontend<br/>(ai-code-review-ui/)"]
+    subgraph Web_App ["Web Application"]
+        UI["Next.js 14 Frontend<br/>(ai-code-review-ui)"]
         Backend["FastAPI Backend<br/>(app/main.py)"]
+        Utils["Shared Gemini Utilities<br/>(app/gemini_utils.py)"]
         
-        User_Web -->|Types/Pastes Code| UI
-        UI -->|POST /review/| Backend
+        User_Web -->|Types / Pastes Code| UI
+        UI -->|SSE POST /review/stream| Backend
+        UI -->|POST /fix/| Backend
+        Backend --> Utils
     end
 
     %% CI/CD Automation Flow
-    subgraph "GitHub Actions CI/CD (scripts/run_review.py)"
+    subgraph CI_CD ["GitHub Actions CI/CD"]
         GitHub["GitHub Pull Request"]
-        Script["run_review.py<br/>(CLI / Automations)"]
+        Script["run_review.py<br/>(CLI / CI Workflow)"]
 
-        User_Git -->|CreatesPR / Triggers Event| GitHub
-        GitHub -->|Provides Event JSON| Script
+        User_Git -->|Opens PR / Pushes Code| GitHub
+        GitHub -->|PR Event Webhook| Script
         Script -.->|Fetches Git Diff| GitHub
-        Script -.->|Posts Review Comment| GitHub
+        Script -.->|Posts Review Comments| GitHub
     end
 
     %% External AI Service
-    subgraph "AI Provider"
-        Gemini{"Google Gemini API<br/>(gemini-2.5-flash)"}
+    subgraph AI_Cloud ["Google Cloud AI"]
+        Gemini{"Google Gemini 3.6 Flash<br/>(generativelanguage.googleapis.com)"}
     end
 
     %% Connections to AI
-    Backend <-->|Sends Code Payload<br/>Receives Structured Markdown| Gemini
-    Script <-->|Sends PR Diff Payload<br/>Receives Structured Feedback| Gemini
+    Utils <-->|Streaming / Sync API Calls| Gemini
+    Script <-->|Sends PR Diff Payload| Gemini
 
     %% Styles
     style User_Web fill:#e2e8f0,stroke:#475569,stroke-width:2px,color:#0f172a
     style User_Git fill:#e2e8f0,stroke:#475569,stroke-width:2px,color:#0f172a
     style UI fill:#38bdf8,stroke:#0f172a,stroke-width:2px,color:#fff
     style Backend fill:#4ade80,stroke:#064e3b,stroke-width:2px,color:#064e3b
+    style Utils fill:#10b981,stroke:#064e3b,stroke-width:2px,color:#fff
     style GitHub fill:#3f3f46,stroke:#18181b,stroke-width:2px,color:#fff
     style Script fill:#fbbf24,stroke:#7c2d12,stroke-width:2px,color:#7c2d12
-    style Gemini fill:#a78bfa,stroke:#7c2d12,stroke-width:2px,color:#fff
+    style Gemini fill:#a78bfa,stroke:#4c1d95,stroke-width:2px,color:#fff
 ```
-
-**Key Components**:
-- **Frontend (Web)**: Next.js 14+ (`page.tsx`), Tailwind CSS 4, shadcn/ui. Handles manual code uploads/inputs via a custom Monaco-like textarea.
-- **Backend (Web API)**: FastAPI (`app/main.py`), Pydantic models. Services incoming HTTP requests and proxies them to the Gemini API securely.
-- **CI/CD Integration**: `scripts/run_review.py` triggers on GitHub PRs, automatically pulling file diffs and submitting them directly to Gemini via API, then posting automated feedback comments.
-- **AI Engine**: Google Gemini API (`gemini-2.5-flash`), configured to act as a senior engineer providing comprehensive static code analysis across various languages.
-
-**Data Flow Details**:
-1. **Web Flow**:
-<<<<<<< HEAD
-   - User inputs code via drag-and-drop or typing in the Web UI.
-   - Frontend triggers a `POST` request to the backend `/review/stream` endpoint.
-   - Backend constructs an optimized structured JSON prompt and streams the Google Gemini API response via SSE.
-   - Frontend parses the JSON stream and renders a tabbed interface with inline code annotations and apply-fix diffs.
-=======
-   - User inputs code + selects language in the Web UI.
-   - Frontend triggers a `POST` request to the backend `/review/` endpoint.
-   - Backend constructs an optimized code review prompt and queries the Google Gemini API.
-   - Response is parsed and rendered locally in the browser utilizing markdown elements.
->>>>>>> 0f7f906314685faf0888799d6f21d52d0b7d3c5e
-2. **Automated CI Flow**:
-   - Developer opens a Pull Request on GitHub.
-   - GitHub Actions workflow injects event context into `run_review.py`.
-   - Script retrieves the PR differ using the GitHub REST API and patches it to Gemini.
-   - Resulting code review is posted straight back into the Pull Request as a comment.
-
-**Tech Stack**:
-| Layer | Technologies |
-|-------|--------------|
-<<<<<<< HEAD
-| Frontend | Next.js 14+, React 19, Tailwind CSS 4, Monaco Editor, react-dropzone, shadcn/ui |
-| Backend | FastAPI, Python 3.11+, uvicorn, httpx, sse-starlette, Pydantic |
-| AI | Google Gemini 2.5 Flash |
-| Utils | dotenv (.env), CORS middleware, logging |
-=======
-| Frontend | Next.js 14+, React 19, Tailwind CSS 4, shadcn/ui, lucide-react |
-| Backend | FastAPI, Python 3.11+, uvicorn, Pydantic |
-| AI | Google Gemini 2.5 Flash |
-| Utils | dotenv (.env), CORS middleware, logging
->>>>>>> 0f7f906314685faf0888799d6f21d52d0b7d3c5e
-
-## Quick Start
-
-### Prerequisites
-
-- Python 3.8 or higher
-- Node.js 18 or higher
-- Google Gemini API Key ([Get one here](https://aistudio.google.com/apikey))
-
-### Backend Setup (app/)
-
-1. **Activate virtual env** (create if needed: `python -m venv venv`, then `venv\Scripts\activate` on Windows)
-2. **Install deps**: `pip install -r requirements.txt`
-3. **Copy `.env.example` to `.env`** and add `GEMINI_API_KEY=your_key`
-4. **Run server**: `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
-
-API docs at http://localhost:8000/docs
-
-### Frontend Setup (ai-code-review-ui/)
-
-1. **Navigate**: `cd ai-code-review-ui`
-2. **Install deps**: `npm install`
-3. **Run dev server**: `npm run dev`
-
-Open http://localhost:3000. Ensure backend runs on :8000 first (update API_URL in code if needed).
-
-## Project Structure
-
-```
-<<<<<<< HEAD
-AI Code Reviewer/                 # Root: d:/College/RCCIIT/Projects/AI Code Reviewer
-=======
-AI Code Reviewer/                 # Root
->>>>>>> 0f7f906314685faf0888799d6f21d52d0b7d3c5e
-├── app/                          # FastAPI Backend
-│   └── main.py                   # Main API server (/review/, /health)
-├── ai-code-review-ui/            # Next.js 14 Frontend
-│   ├── app/
-│   │   ├── page.tsx              # Main review page
-│   │   ├── layout.tsx            # Root layout
-│   │   └── globals.css           # Tailwind styles
-│   ├── components/
-│   │   ├── CodeEditor.tsx        # Monaco code input
-│   │   ├── ReviewDisplay.tsx     # Review output renderer
-│   │   ├── StatusIndicator.tsx   # Loading/Status UI
-│   │   └── ui/                   # shadcn/ui (button, card, etc.)
-│   ├── lib/
-│   │   └── utils.ts              # Shared utilities (cn function)
-│   ├── public/                   # Static assets (icons)
-│   └── package.json              # Next.js deps (next@14+, tailwind, etc.)
-├── scripts/
-│   └── run_review.py             # CLI code review script
-├── requirements.txt              # Backend deps (fastapi, uvicorn, etc.)
-├── .gitignore
-├── .env.example                  # GEMINI_API_KEY template
-└── README.md
-```
-
-## Configuration
-
-### Backend Configuration
-
-Edit `app/main.py` to customize:
-
-```python
-# Change the AI model
-MODEL_NAME = "gemini-2.5-flash"  
-
-# Adjust generation parameters
-"generationConfig": {
-    "temperature": 0.4,      # Lower = more focused
-    "maxOutputTokens": 4096, # Max response length
-    "topP": 0.95,
-    "topK": 40
-}
-
-# CORS settings for production
-allow_origins=[
-    "http://localhost:3000",
-    "https://your-domain.com"  # Add your domain
-]
-```
-
-### Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `GEMINI_API_KEY` | Your Google Gemini API key | Yes |
-
-## API Documentation
-
-### Endpoints
-
-#### `GET /`
-Health check endpoint
-```json
-{
-  "message": "AI Code Review Bot API",
-  "version": "1.0.0",
-  "model": "gemini-1.5-flash"
-}
-```
-
-#### `GET /health/`
-Service health status
-```json
-{
-  "status": "healthy",
-  "model": "gemini-2.5-flash"
-}
-```
-
-#### `POST /review/`
-Submit code for review
-
-**Request Body:**
-```json
-{
-  "code": "def add(a, b):\n    return a + b",
-  "language": "python"  // optional
-}
-```
-
-**Response:**
-```json
-{
-  "review": "## Code Review...",
-  "success": true,
-  "token_count": 1234
-}
-```
-
-**Error Response:**
-```json
-{
-  "detail": "Error message here"
-}
-```
-
-## Usage Examples
-
-### Python Function Review
-```python
-def calculate_average(numbers):
-    total = 0
-    for num in numbers:
-        total += num
-    return total / len(numbers)
-```
-
-### JavaScript Code Review
-```javascript
-function fetchUserData(userId) {
-    const response = fetch(`/api/users/${userId}`);
-    return response.json();
-}
-```
-
-### Git Diff Review
-```diff
-- const data = response.json();
-+ const data = await response.json();
-```
-
-## Development
-
-### Running Tests
-```bash
-# Backend tests
-pytest
-
-# Frontend tests
-npm test
-```
-
-### Code Formatting
-```bash
-# Python
-black app/
-isort app/
-
-# Frontend
-npm run format
-```
-
-### Building for Production
-
-**Backend:**
-```bash
-gunicorn app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
-```
-
-**Frontend:**
-```bash
-npm run build
-npm start
-```
-
-## Docker Deployment
-
-```dockerfile
-# Dockerfile for backend
-FROM python:3.11-slim
-
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY app/ ./app/
-EXPOSE 8000
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-```yaml
-# docker-compose.yml
-version: '3.8'
-services:
-  backend:
-    build: .
-    ports:
-      - "8000:8000"
-    environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-  
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
-```
-
-## Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-
-## Acknowledgments
-
-- [Google Gemini](https://ai.google.dev/) for the powerful AI model
-- [FastAPI](https://fastapi.tiangolo.com/) for the excellent Python framework
-- [Next.js](https://nextjs.org/) for the React framework
-- [Shadcn UI](https://ui.shadcn.com/) for the beautiful components
-- [Tailwind CSS](https://tailwindcss.com/) for the styling utilities
-
-
-## Roadmap
-
-- [ ] Support for more AI models (Claude, GPT-4)
-- [ ] GitHub integration for PR reviews
-- [ ] VS Code extension
-- [ ] Batch file review
-- [ ] Custom review templates
-- [ ] Team collaboration features
-- [ ] Review history and analytics
-
-## Limitations
-
-- Maximum code length: 10,000 characters per request
-- Rate limits apply based on your Gemini API tier
-- Some languages may receive better reviews than others
-- AI-generated feedback should be validated by human developers
-
-## Performance
-
-- Average response time: 2-5 seconds
-- Supports concurrent requests
-- Token usage: ~500-2000 tokens per review
-- Uptime: 99.9% (dependent on Gemini API)
 
 ---
 
-Made with ❤️ by Subhajit
+## 📁 Project Structure
+
+```
+AI Code Reviewer/
+├── app/                          # FastAPI Backend
+│   ├── __init__.py               # Python module definition
+│   ├── gemini_utils.py           # Shared Gemini API caller & retry logic
+│   └── main.py                   # FastAPI app (/review/stream, /review/, /fix/)
+├── ai-code-review-ui/            # Next.js Frontend
+│   ├── app/
+│   │   ├── page.tsx              # Main Reviewer UI
+│   │   ├── layout.tsx            # Root layout & meta
+│   │   └── globals.css           # Global Tailwind CSS tokens
+│   ├── components/
+│   │   ├── BackgroundVideo.tsx   # Ambient background video layer
+│   │   ├── CodeEditor.tsx        # Monaco code editor
+│   │   ├── FadeInView.tsx        # Framer Motion entrance animation
+│   │   ├── InitialLoader.tsx     # 3D animated greeting loader
+│   │   ├── LoadingOverlay.tsx    # Loading spinner & overlay
+│   │   ├── PageTransition.tsx    # Smooth page wrapper
+│   │   ├── ReviewDisplay.tsx     # Structured review tabs & suggestions
+│   │   └── StatusIndicator.tsx   # AI status badge
+│   ├── public/                   # Static assets & background video
+│   └── package.json              # Frontend dependencies
+├── scripts/
+│   └── run_review.py             # CI / GitHub Action review script
+├── .github/workflows/
+│   └── review_pr.yml             # GitHub Actions workflow for PR reviews
+├── requirements.txt              # Python dependencies
+├── .env.example                  # Environment variables template
+└── README.md
+```
+
+---
+
+## 🚀 Quick Start Guide
+
+### Prerequisites
+
+- **Python 3.10+**
+- **Node.js 18+** (or npm / pnpm / yarn)
+- **Google Gemini API Key** ([Get your free key here](https://aistudio.google.com/app/apikey))
+
+---
+
+### 1. Backend Setup
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/subhajit1560/AI-Code-Reviewer.git
+   cd AI-Code-Reviewer
+   ```
+
+2. **Create and activate a virtual environment:**
+   ```bash
+   # On macOS / Linux:
+   python3 -m venv venv
+   source venv/bin/activate
+
+   # On Windows (PowerShell):
+   python -m venv venv
+   .\venv\Scripts\Activate.ps1
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Set up environment variables:**
+   Create a `.env` file in the root directory:
+   ```env
+   GEMINI_API_KEY=your_gemini_api_key_here
+   ```
+
+5. **Start the FastAPI backend:**
+   ```bash
+   python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+   ```
+   Backend will be running at `http://127.0.0.1:8000` (API docs at `http://127.0.0.1:8000/docs`).
+
+---
+
+### 2. Frontend Setup
+
+1. **Navigate to the UI folder:**
+   ```bash
+   cd ai-code-review-ui
+   ```
+
+2. **Install npm packages:**
+   ```bash
+   npm install
+   ```
+
+3. **Start the Next.js development server:**
+   ```bash
+   npm run dev
+   ```
+
+4. **Open in browser:**
+   Visit [http://localhost:3000](http://localhost:3000).
+
+---
+
+## 🔌 API Reference
+
+### `GET /health/`
+Checks backend and AI model connectivity.
+```json
+{
+  "status": "healthy",
+  "model": "gemini-3.6-flash"
+}
+```
+
+### `POST /review/stream`
+Streams AI review chunks via Server-Sent Events (SSE).
+- **Body:** `{"code": "string"}`
+- **Events:** `chunk` (incremental text), `done` (full review JSON), `error` (failure details).
+
+### `POST /review/`
+Synchronous fallback code review endpoint returning structured review JSON.
+- **Body:** `{"code": "string"}`
+
+### `POST /fix/`
+Generates full corrected replacement code for a selected issue.
+- **Body:**
+  ```json
+  {
+    "code": "def add(a, b): return a + b",
+    "issue_message": "Missing type annotations",
+    "line": 1,
+    "original_snippet": "def add(a, b):"
+  }
+  ```
+- **Response:**
+  ```json
+  {
+    "fixed_code": "def add(a: int | float, b: int | float) -> int | float:\n    return a + b"
+  }
+  ```
+
+---
+
+## 🤖 GitHub Action Integration
+
+To enable automated AI code reviews on your repository:
+1. Add `GEMINI_API_KEY` to your GitHub repository secrets (**Settings > Secrets and variables > Actions**).
+2. The workflow file [`.github/workflows/review_pr.yml`](.github/workflows/review_pr.yml) triggers automatically on `pull_request` events, running [`scripts/run_review.py`](scripts/run_review.py) to analyze the diff and leave inline feedback.
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **AI Model** | Google Gemini 3.6 Flash |
+| **Backend** | Python, FastAPI, Uvicorn, HTTPX, Pydantic, sse-starlette |
+| **Frontend** | Next.js 14, React 19, TypeScript, Tailwind CSS 4, Framer Motion |
+| **Code Editor** | Monaco Editor (`@monaco-editor/react`) |
+| **CI/CD** | GitHub Actions |
+
+---
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+---
+
+*Powered by Google Gemini 3.6 Flash • Built with Next.js & FastAPI • Created by [Subhajit](https://github.com/subhajit1560)*

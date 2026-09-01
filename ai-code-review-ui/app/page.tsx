@@ -288,7 +288,7 @@ export default function Home() {
       </main>
 
       <footer className="py-6 border-t border-zinc-100 dark:border-zinc-800 mt-12 text-center text-zinc-500 text-sm">
-        Powered by Google Gemini 2.5 Flash • Built with Next.js &amp; FastAPI
+        Powered by Google Gemini 3.6 Flash • Built with Next.js &amp; FastAPI
       </footer>
     </div>
     </>

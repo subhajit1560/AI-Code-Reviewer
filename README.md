@@ -30,49 +30,21 @@ An intelligent, full-stack code review assistant powered by **Google Gemini 3.6 
 ## 🏗️ System Architecture
 
 ```mermaid
-graph TD
-    User_Web["Web Developer"]
-    User_Git["GitHub PR Author"]
+flowchart TD
+    User["Web Developer"] -->|Pastes Code| UI["Next.js 14 Frontend"]
+    UI -->|SSE Stream: /review/stream| Backend["FastAPI Backend"]
+    UI -->|Apply Fix: /fix/| Backend
+    Backend --> Utils["Gemini Utilities"]
+    Utils -->|API Request| Gemini["Google Gemini 3.6 Flash"]
+    Gemini -->|Structured Review JSON| Utils
+    Utils --> Backend
+    Backend --> UI
 
-    subgraph Web_App ["Web Application"]
-        UI["Next.js 14 Frontend - ai-code-review-ui"]
-        Backend["FastAPI Backend - app/main.py"]
-        Utils["Shared Gemini Utils - app/gemini_utils.py"]
-        
-        User_Web -->|Types / Pastes Code| UI
-        UI -->|SSE POST /review/stream| Backend
-        UI -->|POST /fix/| Backend
-        Backend --> Utils
-    end
-
-    subgraph CI_CD ["GitHub Actions CI/CD"]
-        GitHub["GitHub Pull Request"]
-        Script["run_review.py - CLI/CI Workflow"]
-
-        User_Git -->|Opens PR / Pushes Code| GitHub
-        GitHub -->|PR Event Webhook| Script
-        Script -->|Fetches Git Diff| GitHub
-        Script -->|Posts Review Comments| GitHub
-    end
-
-    subgraph AI_Cloud ["Google Cloud AI"]
-        Gemini["Google Gemini 3.6 Flash API"]
-    end
-
-    Utils -->|Streaming / Sync Calls| Gemini
-    Gemini -->|Structured AI JSON| Utils
-    Script -->|Sends PR Diff| Gemini
+    PR["GitHub Pull Request"] --> Action["GitHub Action Workflow"]
+    Action -->|PR Diff| Script["scripts/run_review.py"]
+    Script -->|Review Request| Gemini
     Gemini -->|Review Feedback| Script
-
-    style User_Web fill:#e2e8f0,stroke:#475569,stroke-width:2px,color:#0f172a
-    style User_Git fill:#e2e8f0,stroke:#475569,stroke-width:2px,color:#0f172a
-    style UI fill:#38bdf8,stroke:#0f172a,stroke-width:2px,color:#fff
-    style Backend fill:#4ade80,stroke:#064e3b,stroke-width:2px,color:#064e3b
-    style Utils fill:#10b981,stroke:#064e3b,stroke-width:2px,color:#fff
-    style GitHub fill:#3f3f46,stroke:#18181b,stroke-width:2px,color:#fff
-    style Script fill:#fbbf24,stroke:#7c2d12,stroke-width:2px,color:#7c2d12
-    style Gemini fill:#a78bfa,stroke:#4c1d95,stroke-width:2px,color:#fff
-
+    Script -->|Post Comment| PR
 ```
 
 ---

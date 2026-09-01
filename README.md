@@ -30,16 +30,14 @@ An intelligent, full-stack code review assistant powered by **Google Gemini 3.6 
 ## 🏗️ System Architecture
 
 ```mermaid
-flowchart TB
-    %% Actors
-    User_Web([Web Developer])
-    User_Git([GitHub PR Author])
+graph TD
+    User_Web["Web Developer"]
+    User_Git["GitHub PR Author"]
 
-    %% Web App Flow
     subgraph Web_App ["Web Application"]
-        UI["Next.js 14 Frontend<br/>(ai-code-review-ui)"]
-        Backend["FastAPI Backend<br/>(app/main.py)"]
-        Utils["Shared Gemini Utilities<br/>(app/gemini_utils.py)"]
+        UI["Next.js 14 Frontend - ai-code-review-ui"]
+        Backend["FastAPI Backend - app/main.py"]
+        Utils["Shared Gemini Utils - app/gemini_utils.py"]
         
         User_Web -->|Types / Pastes Code| UI
         UI -->|SSE POST /review/stream| Backend
@@ -47,27 +45,25 @@ flowchart TB
         Backend --> Utils
     end
 
-    %% CI/CD Automation Flow
     subgraph CI_CD ["GitHub Actions CI/CD"]
         GitHub["GitHub Pull Request"]
-        Script["run_review.py<br/>(CLI / CI Workflow)"]
+        Script["run_review.py - CLI/CI Workflow"]
 
         User_Git -->|Opens PR / Pushes Code| GitHub
         GitHub -->|PR Event Webhook| Script
-        Script -.->|Fetches Git Diff| GitHub
-        Script -.->|Posts Review Comments| GitHub
+        Script -->|Fetches Git Diff| GitHub
+        Script -->|Posts Review Comments| GitHub
     end
 
-    %% External AI Service
     subgraph AI_Cloud ["Google Cloud AI"]
-        Gemini{"Google Gemini 3.6 Flash<br/>(generativelanguage.googleapis.com)"}
+        Gemini["Google Gemini 3.6 Flash API"]
     end
 
-    %% Connections to AI
-    Utils <-->|Streaming / Sync API Calls| Gemini
-    Script <-->|Sends PR Diff Payload| Gemini
+    Utils -->|Streaming / Sync Calls| Gemini
+    Gemini -->|Structured AI JSON| Utils
+    Script -->|Sends PR Diff| Gemini
+    Gemini -->|Review Feedback| Script
 
-    %% Styles
     style User_Web fill:#e2e8f0,stroke:#475569,stroke-width:2px,color:#0f172a
     style User_Git fill:#e2e8f0,stroke:#475569,stroke-width:2px,color:#0f172a
     style UI fill:#38bdf8,stroke:#0f172a,stroke-width:2px,color:#fff

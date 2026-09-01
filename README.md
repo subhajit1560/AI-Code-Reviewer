@@ -27,27 +27,6 @@ An intelligent, full-stack code review assistant powered by **Google Gemini 3.6 
 
 ---
 
-## 🏗️ System Architecture
-
-```mermaid
-flowchart TD
-    User["Web Developer"] -->|Pastes Code| UI["Next.js 14 Frontend"]
-    UI -->|SSE Stream: /review/stream| Backend["FastAPI Backend"]
-    UI -->|Apply Fix: /fix/| Backend
-    Backend --> Utils["Gemini Utilities"]
-    Utils -->|API Request| Gemini["Google Gemini 3.6 Flash"]
-    Gemini -->|Structured Review JSON| Utils
-    Utils --> Backend
-    Backend --> UI
-
-    PR["GitHub Pull Request"] --> Action["GitHub Action Workflow"]
-    Action -->|PR Diff| Script["scripts/run_review.py"]
-    Script -->|Review Request| Gemini
-    Gemini -->|Review Feedback| Script
-    Script -->|Post Comment| PR
-```
-
----
 
 ## 📁 Project Structure
 
